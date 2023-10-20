@@ -25,3 +25,9 @@ pip install -r requirements.txt
 ``` sh
 ./manage.py runserver
 ```
+
+## Run tests
+
+``` sh
+pytest
+```

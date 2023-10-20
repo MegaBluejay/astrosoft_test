@@ -1,4 +1,4 @@
-# Usage
+## Usage
 
 ```
 Usage: loader [OPTIONS] <IN_FILE>
