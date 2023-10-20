@@ -53,12 +53,8 @@ async fn main() -> Result<()> {
             hasher.reset();
 
             let output = match Url::parse(&line) {
-                Ok(url) => {
-                    Output::JoinHandle(tokio::spawn(load(url, hash, load_ctx.clone())))
-                }
-                Err(err) => {
-                    Output::UrlParseError { line, err }
-                }
+                Ok(url) => Output::LoadJoinHandle(tokio::spawn(load(url, hash, load_ctx.clone()))),
+                Err(err) => Output::UrlParseError { line, err },
             };
             out_sender.send(output)?;
         }
@@ -69,7 +65,7 @@ async fn main() -> Result<()> {
     println!("{}", counter);
     while let Some(out) = out_receiver.recv().await {
         let message = match out {
-            Output::JoinHandle(handle) => handle
+            Output::LoadJoinHandle(handle) => handle
                 .await?
                 .err()
                 .map(|err| format!("Error loading: {}", err)),
@@ -124,7 +120,7 @@ struct LoadCtx {
 }
 
 enum Output {
-    JoinHandle(JoinHandle<Result<()>>),
+    LoadJoinHandle(JoinHandle<Result<()>>),
     UrlParseError { line: String, err: url::ParseError },
 }
 
