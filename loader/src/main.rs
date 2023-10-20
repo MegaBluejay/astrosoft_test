@@ -52,17 +52,15 @@ async fn main() -> Result<()> {
             }
             hasher.reset();
 
-            match Url::parse(&line) {
+            let output = match Url::parse(&line) {
                 Ok(url) => {
-                    let join_handle = tokio::spawn(load(url, hash, load_ctx.clone()));
-                    out_sender.send(Output::JoinHandle(join_handle)).unwrap();
+                    Output::JoinHandle(tokio::spawn(load(url, hash, load_ctx.clone())))
                 }
                 Err(err) => {
-                    out_sender
-                        .send(Output::UrlParseError { line, err })
-                        .unwrap();
+                    Output::UrlParseError { line, err }
                 }
-            }
+            };
+            out_sender.send(output)?;
         }
         anyhow::Ok(())
     });
