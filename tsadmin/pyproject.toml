@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "tsadmin"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+django = "^4.2.6"
+python-ipware = "^1.0.5"
+langcodes = "^3.3.0"
+
+
+[tool.poetry.group.dev.dependencies]
+ipython = "^8.16.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 120
+
+[tool.isort]
+line_length = 120
