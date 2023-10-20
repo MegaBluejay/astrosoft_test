@@ -9,17 +9,21 @@ use std::{
 
 use anyhow::{Context, Result};
 use clap::Parser;
+use enable_ansi_support::enable_ansi_support;
 use futures::TryStreamExt as _;
 use identity_hash::IntSet;
 use reqwest::{Client, Url};
 use tokio::{
     fs::{create_dir_all, File},
-    io::{AsyncBufReadExt, AsyncWriteExt, BufReader}, sync::mpsc::unbounded_channel, task::JoinHandle,
+    io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
+    sync::mpsc::unbounded_channel,
+    task::JoinHandle,
 };
 use xxhash_rust::xxh3::Xxh3;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let ansi_codes_enabled = enable_ansi_support().is_ok();
     let cli = Cli::parse();
 
     create_dir_all(&cli.out_dir)
@@ -54,7 +58,9 @@ async fn main() -> Result<()> {
                     out_sender.send(Output::JoinHandle(join_handle)).unwrap();
                 }
                 Err(err) => {
-                    out_sender.send(Output::UrlParseError { line, err }).unwrap();
+                    out_sender
+                        .send(Output::UrlParseError { line, err })
+                        .unwrap();
                 }
             }
         }
@@ -65,10 +71,17 @@ async fn main() -> Result<()> {
     println!("{}", counter);
     while let Some(out) = out_receiver.recv().await {
         let message = match out {
-            Output::JoinHandle(handle) => handle.await?.err().map(|err| format!("Error loading: {}", err)),
-            Output::UrlParseError { line, err } => Some(format!("Couldn't parse url {}: {}", line, err)),
+            Output::JoinHandle(handle) => handle
+                .await?
+                .err()
+                .map(|err| format!("Error loading: {}", err)),
+            Output::UrlParseError { line, err } => {
+                Some(format!("Couldn't parse url {}: {}", line, err))
+            }
         };
-        print!("{}", ansi_escapes::EraseLines(2));
+        if ansi_codes_enabled {
+            print!("{}", ansi_escapes::EraseLines(2));
+        }
         if let Some(message) = message {
             println!("{}", message);
         }
@@ -114,10 +127,7 @@ struct LoadCtx {
 
 enum Output {
     JoinHandle(JoinHandle<Result<()>>),
-    UrlParseError {
-        line: String,
-        err: url::ParseError,
-    }
+    UrlParseError { line: String, err: url::ParseError },
 }
 
 #[derive(Parser)]
