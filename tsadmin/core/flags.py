@@ -1,3 +1,27 @@
+from django.templatetags.static import static
+from django.utils.html import format_html
+from django.utils.safestring import SafeString
+from langcodes import Language, LanguageTagError
+
+
+def display_lang(accept_language: str) -> None | str | SafeString:
+    langs = accept_language.split(",")
+    if not langs:
+        return None
+
+    lang_tag = langs[0]
+    try:
+        language = Language.get(lang_tag)
+    except LanguageTagError:
+        return lang_tag
+    territory = language.territory
+    if not territory or territory not in flags:
+        return lang_tag
+
+    flag_url = static(f"flags/{territory}.svg")
+    return format_html("<img src={} alt={}>", flag_url, territory)
+
+
 flags = {
     "AD",
     "AE",
