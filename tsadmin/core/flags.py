@@ -5,11 +5,10 @@ from langcodes import Language, LanguageTagError
 
 
 def display_lang(accept_language: str) -> None | str | SafeString:
-    langs = accept_language.split(",")
-    if not langs:
+    if not accept_language:
         return None
 
-    lang_tag = langs[0]
+    lang_tag = accept_language.split(",")[0]
     try:
         language = Language.get(lang_tag)
     except LanguageTagError:
