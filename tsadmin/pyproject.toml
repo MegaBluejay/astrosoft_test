@@ -9,6 +9,7 @@ python = "^3.11"
 django = "^4.2.6"
 python-ipware = "^1.0.5"
 langcodes = "^3.3.0"
+pytest-django = "^4.5.2"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -23,3 +24,7 @@ line-length = 120
 
 [tool.isort]
 line_length = 120
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "tsadmin.settings"
+python_files = ["test_*.py"]
