@@ -14,7 +14,7 @@ use identity_hash::IntSet;
 use reqwest::{Client, Url};
 use tokio::{
     fs::{create_dir_all, File},
-    io::{AsyncBufReadExt, AsyncWriteExt, BufReader}, sync::mpsc::unbounded_channel,
+    io::{AsyncBufReadExt, AsyncWriteExt, BufReader}, sync::mpsc::unbounded_channel, task::JoinHandle,
 };
 use xxhash_rust::xxh3::Xxh3;
 
@@ -37,7 +37,7 @@ async fn main() -> Result<()> {
     });
     let mut url_hashes: IntSet<u64> = Default::default();
     let mut hasher = Xxh3::new();
-    let (join_sender, mut join_receiver) = unbounded_channel();
+    let (out_sender, mut out_receiver) = unbounded_channel();
 
     let spawner = tokio::spawn(async move {
         while let Some(line) = in_lines.next_line().await? {
@@ -50,23 +50,30 @@ async fn main() -> Result<()> {
 
             match Url::parse(&line) {
                 Ok(url) => {
-                    let cloned_ctx = load_ctx.clone();
-                    join_sender.send(tokio::spawn(async move {
-                        if let Err(err) = load(url, hash, cloned_ctx).await {
-                            eprintln!("Error loading: {}", err);
-                        }
-                    })).unwrap();
+                    let join_handle = tokio::spawn(load(url, hash, load_ctx.clone()));
+                    out_sender.send(Output::JoinHandle(join_handle)).unwrap();
                 }
                 Err(err) => {
-                    eprintln!("Couldn't parse url {}: {}", line, err);
+                    out_sender.send(Output::UrlParseError { line, err }).unwrap();
                 }
             }
         }
         anyhow::Ok(())
     });
 
-    while let Some(handle) = join_receiver.recv().await {
-        handle.await?;
+    let mut counter = 0;
+    println!("{}", counter);
+    while let Some(out) = out_receiver.recv().await {
+        let message = match out {
+            Output::JoinHandle(handle) => handle.await?.err().map(|err| format!("Error loading: {}", err)),
+            Output::UrlParseError { line, err } => Some(format!("Couldn't parse url {}: {}", line, err)),
+        };
+        print!("{}", ansi_escapes::EraseLines(2));
+        if let Some(message) = message {
+            println!("{}", message);
+        }
+        counter += 1;
+        println!("{}", counter);
     }
 
     spawner.await??;
@@ -103,6 +110,14 @@ struct LoadCtx {
     counter: AtomicU32,
     out_dir: PathBuf,
     client: Client,
+}
+
+enum Output {
+    JoinHandle(JoinHandle<Result<()>>),
+    UrlParseError {
+        line: String,
+        err: url::ParseError,
+    }
 }
 
 #[derive(Parser)]

@@ -33,6 +33,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "ansi-escapes"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e3c0daaaae24df5995734b689627f8fa02101bc5bbc768be3055b66a010d7af"
+
+[[package]]
 name = "anstream"
 version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -595,6 +601,7 @@ checksum = "da2479e8c062e40bf0066ffa0bc823de0a9368974af99c9f6df941d2c231e03f"
 name = "loader"
 version = "0.1.0"
 dependencies = [
+ "ansi-escapes",
  "anyhow",
  "clap",
  "futures",
@@ -603,6 +610,7 @@ dependencies = [
  "reqwest",
  "tokio",
  "tokio-stream",
+ "url",
  "xxhash-rust",
 ]
 
