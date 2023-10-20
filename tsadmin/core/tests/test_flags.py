@@ -1,10 +1,12 @@
+import pytest
 from django.utils.safestring import SafeString
 
 from ..flags import display_lang
 
 
-def test_ok():
-    display = display_lang("en-US")
+@pytest.mark.parametrize("accept_language", ["en-US", "en-US;q=1.0", "en-US,en;q=0.9"])
+def test_ok(accept_language: str):
+    display = display_lang(accept_language)
     assert isinstance(display, SafeString)
     assert "US.svg" in display
 

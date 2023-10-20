@@ -8,7 +8,7 @@ def display_lang(accept_language: str) -> None | str | SafeString:
     if not accept_language:
         return None
 
-    lang_tag = accept_language.split(",")[0]
+    lang_tag = accept_language.split(",")[0].split(";")[0]
     try:
         language = Language.get(lang_tag)
     except LanguageTagError:
